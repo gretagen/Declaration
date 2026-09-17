@@ -1,5 +1,5 @@
 package.path = "/usr/lib/declaration/?.lua;/usr/lib/declaration/generators/?.lua;" .. package.path
-11
+
 local config = require("config")
 
 local sync = {}
@@ -80,7 +80,7 @@ end
 -- load generators
 local generators = {}
 local generator_names = {
-  "hostname", "timezone", "locale", "hwclock", "keymap",
+  "hostname", "t1imezone", "locale", "hwclock", "keymap",
   "console_font", "env", "boot", "init", "packages",
   "subspaces", "users", "network", "fstab", "services", "modules",
   "ssh", "edit",

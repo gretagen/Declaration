@@ -1,8 +1,6 @@
 #!/bin/bash
 # iniswap handler: runit
 
-BUILD_DIR="/tmp/initsys"
-
 install_runit() {
     # Check if already installed
     if [ -x /sbin/runit-init ]; then
@@ -10,54 +8,8 @@ install_runit() {
         return
     fi
 
-    local cache="/var/cache/init"
-    mkdir -p "$cache" "$BUILD_DIR"
-
-    # Download (cached)
-    if [ ! -f "$cache/runit-2.3.1.tar.gz" ]; then
-        echo "  Downloading runit..."
-        curl -L "https://smarden.org/runit/runit-2.3.1.tar.gz" \
-             -o "$cache/runit-2.3.1.tar.gz" || {
-            echo "Error: failed to download runit." >&2
-            exit 1
-        }
-    fi
-
-    # Extract to dedicated build directory
-    rm -rf "$BUILD_DIR/runit"
-    mkdir -p "$BUILD_DIR/runit"
-    tar xzf "$cache/runit-2.3.1.tar.gz" -C "$BUILD_DIR/runit" || {
-        echo "Error: failed to extract runit." >&2
-        exit 1
-    }
-
-    # Find the source directory containing package/compile
-    local compile_script
-    compile_script=$(find "$BUILD_DIR/runit" -name "compile" -path "*/package/compile" 2>/dev/null | head -1)
-    if [ -z "$compile_script" ]; then
-        echo "Error: package/compile not found in extracted source." >&2
-        exit 1
-    fi
-    srcdir=$(dirname "$(dirname "$compile_script")")
-    cd "$srcdir" || {
-        echo "Error: failed to enter runit source." >&2
-        exit 1
-    }
-
-    # Build using runit's package/compile
-    ./package/compile || {
-        echo "Error: failed to build runit." >&2
-        exit 1
-    }
-
-    # Install binaries to /sbin/
-    cp command/* /sbin/ || {
-        echo "Error: failed to install runit binaries." >&2
-        exit 1
-    }
-
-    rm -rf "$BUILD_DIR/runit"
-    echo "  runit installed."
+    echo "  Installing runit via zeta..."
+    zeta -provide --pass runit
 }
 
 generate_runit_services() {
