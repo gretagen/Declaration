@@ -47,7 +47,7 @@ function gen.plan(cfg, sync)
   end
 
   -- Build desired shared cmdline extras (root identity + kernel_cmdline)
-  -- Applied via genzee rewrite-limine after patching one existing cmdline.
+  -- Applied via chronos rewrite-limine after patching one existing cmdline.
   local cmdline_parts = {}
   if cfg.root_partuuid and cfg.root_partuuid ~= "PLACEHOLDER" then
     table.insert(cmdline_parts, "root=PARTUUID=" .. cfg.root_partuuid)
@@ -79,8 +79,8 @@ function gen.plan(cfg, sync)
   local need_cmdline = false
   if current_cmdline_str and current_cmdline_str ~= desired_cmdline then
     need_cmdline = true
-    -- Patch only the first (default /Haliade OS) cmdline so genzee can
-    -- harvest extras; full multi-entry rewrite happens via genzee.
+    -- Patch only the first (default /Haliade OS) cmdline so chronos can
+    -- harvest extras; full multi-entry rewrite happens via chronos.
     new = new:gsub("cmdline:%s*[^\n]*", "cmdline: " .. desired_cmdline, 1)
   end
 
@@ -89,7 +89,7 @@ function gen.plan(cfg, sync)
       "update bootloader globals/cmdline", function()
         sync.write_file(path, new)
         -- Regenerate generation entries from snapshots
-        sync.shell("genzee rewrite-limine")
+        sync.shell("chronos rewrite-limine")
       end))
   end
 

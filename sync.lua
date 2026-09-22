@@ -215,9 +215,9 @@ if arg and arg[0] and arg[0]:match("sync%.lua$") then
     io.stderr:write("No new generation created — fix errors and re-run, or boot a previous generation.\n")
   else
     print("Creating post-sync generation...")
-    if not sync.shell("genzee create 'post-sync'") then
-      io.stderr:write("[warn] genzee create failed — system is synced but no new boot entry was added.\n")
-      io.stderr:write("        Check btrfs layout (@ / @snapshots) and run: genzee create 'post-sync'\n")
+    if not sync.shell("chronos create 'post-sync'") then
+      io.stderr:write("[warn] chronos create failed — system is synced but no new boot entry was added.\n")
+      io.stderr:write("        Check btrfs layout (@ / @snapshots) and run: chronos create 'post-sync'\n")
     end
     print("Synchronization complete.")
   end
