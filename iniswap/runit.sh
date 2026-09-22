@@ -23,7 +23,7 @@ generate_runit_services() {
 #!/bin/sh
 exec 2>&1
 export PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
-# runit stage 1 — early init (Zerene OS)
+# runit stage 1 — early init (Haliade OS)
 
 # Mount virtual filesystems (skip if already mounted by initramfs)
 mountpoint -q /proc || mount -t proc proc /proc
@@ -34,7 +34,7 @@ mountpoint -q /run  || mount -t tmpfs tmpfs /run
 mountpoint -q /tmp  || mount -t tmpfs tmpfs /tmp
 
 # Hostname
-hostname="$(cat /etc/hostname 2>/dev/null || echo zerene)"
+hostname="$(cat /etc/hostname 2>/dev/null || echo haliade)"
 hostname "$hostname"
 
 # Keymaps
@@ -126,7 +126,7 @@ STAGE2
 exec 2>&1
 export PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
 export SVDIR=/etc/service
-# runit stage 3 — shutdown (Zerene OS)
+# runit stage 3 — shutdown (Haliade OS)
 
 # Stop all services
 for svc in /etc/service/*/run; do
