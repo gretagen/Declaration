@@ -13,6 +13,14 @@ local mergeable = {
 local musl = { alpine = true }
 
 -- Read manifest of previously merged packages
+--
+-- The manifest is written by the commands themselves, not here: subspace-merge
+-- appends on a successful install and subspace-unmerge rewrites on a successful
+-- removal. Writing it from gen.plan would be wrong — gen.plan only plans, and
+-- sync.lua asks for confirmation afterwards. A declined prompt or a failed
+-- install would leave a manifest claiming the change was made, and the next run
+-- would see no diff and never retry. Letting the commands own it means the
+-- manifest only ever records merges that actually happened.
 local function read_manifest(path)
   local declared = {}
   local f = io.open(path, "r")
@@ -26,26 +34,6 @@ local function read_manifest(path)
     f:close()
   end
   return declared
-end
-
--- Write manifest of currently merged packages
-local function write_manifest(path, desired_set)
-  local dir = path:match("^(.*/)")
-  if dir then os.execute("mkdir -p '" .. dir .. "'") end
-  local f, err = io.open(path, "w")
-  if not f then
-    io.stderr:write("[warn] failed to write manifest: " .. (err or "unknown") .. "\n")
-    return
-  end
-  local sorted = {}
-  for pkg in pairs(desired_set) do
-    sorted[#sorted + 1] = pkg
-  end
-  table.sort(sorted)
-  for _, pkg in ipairs(sorted) do
-    f:write(pkg .. "\n")
-  end
-  f:close()
 end
 
 function gen.plan(cfg, sync)
@@ -79,7 +67,7 @@ function gen.plan(cfg, sync)
             table.insert(changes, sync.change("+", "merged-packages (" .. distro .. ")", pkg, nil,
               function(_, s)
                 io.stderr:write("[apply] merged-" .. distro .. ": installing " .. pkg .. " onto host\n")
-                local ok = s.shell("subspace-merge --pass " .. distro .. " " .. pkg)
+                local ok = s.shell("subspace-merge --pass --no-generation " .. distro .. " " .. pkg)
                 if not ok then
                   io.stderr:write("[warn] '" .. pkg .. "' — install failed in " .. distro .. "\n")
                 end
@@ -101,7 +89,7 @@ function gen.plan(cfg, sync)
           table.insert(changes, sync.change("-", "merged-packages (" .. distro .. ")", pkg, nil,
             function(_, s)
               io.stderr:write("[apply] merged-" .. distro .. ": removing " .. pkg .. " from host\n")
-              local ok = s.shell("subspace-unmerge --pass " .. distro .. " " .. pkg)
+              local ok = s.shell("subspace-unmerge --pass --no-generation " .. distro .. " " .. pkg)
               if not ok then
                 io.stderr:write("[warn] '" .. pkg .. "' — removal failed in " .. distro .. "\n")
               end
@@ -109,8 +97,6 @@ function gen.plan(cfg, sync)
             end))
         end
 
-        -- Update manifest for next run
-        write_manifest(manifest_path, desired_set)
       end
     end
   end

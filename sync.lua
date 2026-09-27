@@ -78,11 +78,17 @@ function sync.change(typ, section, target, detail, apply)
 end
 
 -- load generators
+--
+-- Order matters within a change type: subspaces must come before
+-- subspaces_packages and merged_packages, because those two install into or
+-- merge from a subspace that has to exist first. The sort in sync.collect is
+-- stable (it breaks ties on collection order), so this list is respected.
 local generators = {}
 local generator_names = {
-  "hostname", "t1imezone", "locale", "hwclock", "keymap",
+  "hostname", "timezone", "locale", "hwclock", "keymap",
   "console_font", "env", "boot", "init", "packages",
-  "subspaces", "users", "network", "fstab", "services", "modules",
+  "subspaces", "subspaces_packages", "merged_packages",
+  "users", "network", "fstab", "services", "modules",
   "ssh", "edit",
 }
 
@@ -101,6 +107,7 @@ sync.vprint("%d generators loaded", #generators)
 -- collect all changes
 function sync.collect(cfg)
   local changes = {}
+  local seq = 0
   for _, gen in ipairs(generators) do
     local name = gen.name or "?"
     sync.vprint("planner '%s' running...", name)
@@ -108,15 +115,26 @@ function sync.collect(cfg)
     if ok and plans then
       sync.vprint("  → %d changes", #plans)
       for _, c in ipairs(plans) do
+        seq = seq + 1
+        c.seq = seq
         table.insert(changes, c)
       end
     else
       sync.vprint("  → ERROR: %s", tostring(plans))
     end
   end
+  -- Group by type (+ before ~ before -) so a package swap installs the
+  -- replacement before removing the original. Ties break on collection order:
+  -- table.sort is not stable, so without an explicit tiebreaker the order
+  -- within a group would be arbitrary and a subspace could be used before the
+  -- change that creates it is applied.
   table.sort(changes, function(a, b)
     local order = { ["+"] = 1, ["~"] = 2, ["-"] = 3 }
-    return (order[a.type] or 0) < (order[b.type] or 0)
+    local oa, ob = order[a.type] or 0, order[b.type] or 0
+    if oa ~= ob then
+      return oa < ob
+    end
+    return a.seq < b.seq
   end)
   sync.vprint("total changes: %d", #changes)
   return changes

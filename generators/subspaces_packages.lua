@@ -43,6 +43,13 @@ local distros = {
 }
 
 -- Read manifest of previously declared packages
+--
+-- Written by nothing here on purpose: gen.plan only plans, and sync.lua asks
+-- for confirmation afterwards. Writing the manifest during planning would mean
+-- a declined prompt or a failed install left the manifest claiming the change
+-- was made, so the next run would see no diff and never retry. subspace-run
+-- reports what is actually installed, which is the real source of truth here —
+-- the manifest only decides what to *remove*.
 local function read_manifest(path)
   local declared = {}
   local f = io.open(path, "r")
@@ -56,26 +63,6 @@ local function read_manifest(path)
     f:close()
   end
   return declared
-end
-
--- Write manifest of currently declared packages
-local function write_manifest(path, desired_set)
-  local dir = path:match("^(.*/)")
-  if dir then os.execute("mkdir -p '" .. dir .. "'") end
-  local f, err = io.open(path, "w")
-  if not f then
-    io.stderr:write("[warn] failed to write manifest: " .. (err or "unknown") .. "\n")
-    return
-  end
-  local sorted = {}
-  for pkg in pairs(desired_set) do
-    sorted[#sorted + 1] = pkg
-  end
-  table.sort(sorted)
-  for _, pkg in ipairs(sorted) do
-    f:write(pkg .. "\n")
-  end
-  f:close()
 end
 
 function gen.plan(cfg, sync)
@@ -137,10 +124,8 @@ function gen.plan(cfg, sync)
         end
       end
 
-      -- Update manifest for next run
-      write_manifest(manifest_path, desired_set)
+      end
     end
-  end
 
   return changes
 end
