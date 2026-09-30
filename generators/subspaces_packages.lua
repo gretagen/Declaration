@@ -40,6 +40,11 @@ local distros = {
     install = "xbps-install -Sy",
     remove  = "xbps-remove -Ry",
   },
+  nixos = {
+    list    = "nix profile list",
+    install = "nix profile add",
+    remove  = "nix profile remove",
+  },
 }
 
 -- Read manifest of previously declared packages

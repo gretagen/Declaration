@@ -24,13 +24,15 @@ function gen.plan(cfg, sync)
   end
 
   -- wallpaper (only if key already present or explicitly set)
+  -- NOTE: [^\n]* not .* — Lua's dot matches newlines, so .* here would
+  -- swallow the rest of the file (entries and cmdline included).
   if cfg.boot.wallpaper and cfg.boot.wallpaper ~= "" then
     if new:match("wallpaper:") then
-      new = new:gsub("wallpaper:%s*.*", "wallpaper: " .. cfg.boot.wallpaper, 1)
+      new = new:gsub("wallpaper:[^\n]*", "wallpaper: " .. cfg.boot.wallpaper, 1)
       if not new:match("wallpaper_style:") then
-        new = new:gsub("(wallpaper:%s*.*)", "%1\nwallpaper_style: stretched", 1)
+        new = new:gsub("(wallpaper:[^\n]*)", "%1\nwallpaper_style: stretched", 1)
       else
-        new = new:gsub("wallpaper_style:%s*.*", "wallpaper_style: stretched", 1)
+        new = new:gsub("wallpaper_style:[^\n]*", "wallpaper_style: stretched", 1)
       end
     end
   end
@@ -73,6 +75,21 @@ function gen.plan(cfg, sync)
 
   if cfg.kernel_cmdline and cfg.kernel_cmdline ~= "" then
     table.insert(cmdline_parts, cfg.kernel_cmdline)
+  end
+
+  -- Preserve init= from the current entry: it declares which init system
+  -- boots (written by iniswap). Without this the rebuild silently drops it
+  -- and the machine falls back to the default init on next boot. Skip if
+  -- kernel_cmdline already carries one, to avoid duplicating the parameter.
+  local has_init = table.concat(cmdline_parts, " "):find("init=") ~= nil
+  if not has_init and current_cmdline_str then
+    -- anchored: match "init=" at start or after whitespace so a trailing
+    -- ".init=1" style param is not mistaken for the init declaration
+    local init_param = current_cmdline_str:match("^init=%S+")
+      or current_cmdline_str:match("%s(init=%S+)")
+    if init_param then
+      table.insert(cmdline_parts, init_param)
+    end
   end
 
   local desired_cmdline = table.concat(cmdline_parts, " ")
