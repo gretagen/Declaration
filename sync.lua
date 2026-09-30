@@ -86,9 +86,11 @@ end
 local generators = {}
 local generator_names = {
   "hostname", "timezone", "locale", "hwclock", "keymap",
-  "console_font", "env", "boot", "init", "packages",
+  "console_font", "env", "boot", "init", "packages", "packages-isolated",
   "subspaces", "subspaces_packages", "merged_packages",
-  "users", "network", "fstab", "services", "modules",
+  "users", "network", "fstab",
+  "rc-services", "runit-services", "dinit-services",
+  "modules",
   "ssh", "edit",
 }
 
@@ -209,8 +211,10 @@ if arg and arg[0] and arg[0]:match("sync%.lua$") then
     io.stderr:write("error: " .. err .. "\n")
     os.exit(1)
   end
-  sync.vprint("config loaded: hostname=%s, timezone=%s, packages=%d, services=%d",
-    cfg.hostname, cfg.timezone, #cfg.packages, #cfg.services)
+  sync.vprint("config loaded: hostname=%s, timezone=%s, packages=%d/%d, services=%d/%d/%d",
+    cfg.hostname, cfg.timezone,
+    #(cfg["packages-haliade"] or {}), #(cfg["packages-isolated"] or {}),
+    #(cfg["rc-services"] or {}), #(cfg["runit-services"] or {}), #(cfg["dinit-services"] or {}))
 
   local changes = sync.collect(cfg)
   sync.summary(changes)

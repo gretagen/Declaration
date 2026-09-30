@@ -18,10 +18,16 @@ local defaults = {
     serial_speed = 115200,
   },
 
-  packages  = {},
+  ["packages-haliade"]  = {},
+  ["packages-isolated"] = {},
   subspaces = {},
   modules   = {},
-  services = { "sshd", "NetworkManager", "elogind" },
+  init      = "openrc",
+
+  ["rc-services"]    = {},
+  ["runit-services"] = {},
+  ["dinit-services"] = {},
+
   users    = {},
 
   network = { connections = {} },
@@ -43,7 +49,9 @@ local schema = {
   root_partuuid = "string", kernel_cmdline = "string",
   environment = "table",
   boot = "table", init = "string",
-  packages = "table", subspaces = "table", modules = "table", services = "table", users = "table",
+  ["packages-haliade"] = "table", ["packages-isolated"] = "table",
+  subspaces = "table", modules = "table", users = "table",
+  ["rc-services"] = "table", ["runit-services"] = "table", ["dinit-services"] = "table",
   network = "table", fstab = "table",
   ssh = "table", edit = "table",
 }
