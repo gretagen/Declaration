@@ -41,7 +41,7 @@ function gen.plan(cfg, sync)
       table.insert(changes, sync.change("+", "subspaces", distro, nil,
         function(_, s)
           io.stderr:write("[apply] installing " .. distro .. " subspace...\n")
-          local ok = s.shell("subspace-cli install " .. distro)
+          local ok = s.shell("subspace-cli install --pass " .. distro)
           if not ok then
             io.stderr:write("[warn] '" .. distro .. "' — installation failed\n")
           end
@@ -61,7 +61,7 @@ function gen.plan(cfg, sync)
     table.insert(changes, sync.change("-", "subspaces", distro, nil,
       function(_, s)
         io.stderr:write("[apply] removing " .. distro .. " subspace...\n")
-        local ok = s.shell("subspace-cli remove " .. distro)
+        local ok = s.shell("subspace-cli remove --pass " .. distro)
         if not ok then
           io.stderr:write("[warn] '" .. distro .. "' — removal failed\n")
         end
