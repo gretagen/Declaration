@@ -149,12 +149,38 @@ sleep 1
 # Unmount filesystems
 umount -a -r 2>/dev/null || true
 
-# Final actions based on $1
-# Use kernel syscalls via busybox/util-linux if available; avoid /sbin wrappers
-case "${1:-reboot}" in
-    reboot)   command -v busybox >/dev/null && exec busybox reboot -f; exec /usr/bin/reboot -f 2>/dev/null; echo b > /proc/sysrq-trigger ;;
-    halt)     command -v busybox >/dev/null && exec busybox halt -f; echo o > /proc/sysrq-trigger ;;
-    poweroff) command -v busybox >/dev/null && exec busybox poweroff -f; echo o > /proc/sysrq-trigger ;;
+# Final action. runit execs this stage WITHOUT arguments (see runit.c:
+# prog[1] = 0), so $1 only matters for manual runs — a bare
+# "case ${1:-reboot}" always rebooted, even for shutdown -p. The real
+# signal is the /etc/runit/reboot marker that runit-init sets:
+# owner-executable = reboot, anything else = poweroff — the same rule
+# runit itself applies after stage 3. Busybox kernel syscalls only, never
+# the shutdown/reboot wrappers: stage 2 is already gone, so runit would
+# ignore their marker/signal.
+reboot_marker="${RUNIT_REBOOT_MARKER:-/etc/runit/reboot}"
+action="${1:-}"
+if [ -z "$action" ]; then
+    if [ -x "$reboot_marker" ]; then action=reboot; else action=poweroff; fi
+fi
+case "$action" in
+    reboot)
+        sync
+        echo 'Root filesystem remounted read-only; rebooting.'
+        command -v busybox >/dev/null && exec busybox reboot -f
+        echo b > /proc/sysrq-trigger
+        ;;
+    halt)
+        sync
+        echo 'Root filesystem remounted read-only; halting.'
+        command -v busybox >/dev/null && exec busybox halt -f
+        echo o > /proc/sysrq-trigger
+        ;;
+    poweroff)
+        sync
+        echo 'Root filesystem remounted read-only; powering off.'
+        command -v busybox >/dev/null && exec busybox poweroff -f
+        echo o > /proc/sysrq-trigger
+        ;;
 esac
 STAGE3
     chmod +x /etc/runit/3
