@@ -1,5 +1,9 @@
 package.path = "/usr/lib/declaration/?.lua;/usr/lib/declaration/generators/?.lua;" .. package.path
 
+-- Which generators run is decided by /etc/haliade/enabled_modules.lua
+-- (see plugins.lua); sync.lua does not own that list.
+local enabled_generators = require("plugins").enabled_generators()
+
 local config = require("config")
 
 local sync = {}
@@ -84,18 +88,10 @@ end
 -- merge from a subspace that has to exist first. The sort in sync.collect is
 -- stable (it breaks ties on collection order), so this list is respected.
 local generators = {}
-local generator_names = {
-  "hostname", "timezone", "locale", "hwclock", "keymap",
-  "console_font", "env", "boot", "init", "packages", "packages-isolated",
-  "subspaces", "subspaces_packages", "merged_packages",
-  "users", "network", "fstab",
-  "rc-services", "runit-services", "dinit-services",
-  "modules",
-  "ssh", "edit",
-}
+
 
 sync.vprint("loading generators...")
-for _, name in ipairs(generator_names) do
+for _, name in ipairs(enabled_generators) do
   local ok, gen = pcall(require, name)
   if ok and type(gen) == "table" then
     table.insert(generators, gen)
