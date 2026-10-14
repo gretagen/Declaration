@@ -2,15 +2,18 @@ local gen = {}
 gen.name = "init"
 
 -- Known init binaries, matched by suffix exactly like iniswap's
--- detect_current_init (*/openrc-init, */runit-init, */dinit). Note dinit has
--- no -init wrapper: iniswap writes init=/sbin/dinit, and matching by suffix
--- keeps /sbin vs /usr/sbin irrelevant.
-local valid_inits = { "openrc", "runit", "dinit" }
+-- detect_current_init (*/openrc-init, */runit-init, */dinit, */systemd).
+-- Note dinit has no -init wrapper: iniswap writes init=/sbin/dinit, and
+-- systemd is its own PID1 at /usr/lib/systemd/systemd — matching by suffix
+-- keeps /sbin vs /usr/sbin irrelevant. /systemd$ must not collide with
+-- /dinit$ (no path suffix does today).
+local valid_inits = { "openrc", "runit", "dinit", "systemd" }
 
 local init_suffixes = {
   { pattern = "/openrc%-init$", name = "openrc" },
   { pattern = "/runit%-init$",  name = "runit" },
   { pattern = "/dinit$",        name = "dinit" },
+  { pattern = "/systemd$",      name = "systemd" },
 }
 
 -- Detect the init declared in limine.conf. Returns "openrc" when no init=

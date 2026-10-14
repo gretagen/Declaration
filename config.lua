@@ -27,6 +27,7 @@ local base_defaults = {
   ["rc-services"]    = {},
   ["runit-services"] = {},
   ["dinit-services"] = {},
+  ["sysmd-services"] = {},
 
   users    = {},
 
@@ -52,6 +53,7 @@ local base_schema = {
   ["packages-haliade"] = "table", ["packages-isolated"] = "table",
   subspaces = "table", modules = "table", users = "table",
   ["rc-services"] = "table", ["runit-services"] = "table", ["dinit-services"] = "table",
+  ["sysmd-services"] = "table",
   network = "table", fstab = "table",
   ssh = "table", edit = "table",
 }

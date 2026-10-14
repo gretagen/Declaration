@@ -3,7 +3,7 @@ gen.name = "subspaces"
 
 local valid_distros = {
   debian = true, alpine = true, gentoo = true, void = true,
-  fedora = true, opensuse = true, arch = true,
+  fedora = true, opensuse = true, arch = true, nixos = true,
 }
 
 function gen.plan(cfg, sync)
@@ -31,7 +31,7 @@ function gen.plan(cfg, sync)
   for _, distro in ipairs(cfg.subspaces) do
     if not valid_distros[distro] then
       io.stderr:write("[warn] subspaces: unknown distro '" .. distro .. "'\n")
-      io.stderr:write("  supported: debian, alpine, gentoo, void, fedora, opensuse, arch\n")
+      io.stderr:write("  supported: debian, alpine, gentoo, void, fedora, opensuse, arch, nixos\n")
     end
   end
 
