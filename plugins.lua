@@ -26,7 +26,7 @@ local DEFAULT_GENERATORS = {
   "console_font", "env", "boot", "init", "packages", "packages-isolated",
   "subspaces", "subspaces_packages", "merged_packages",
   "users", "network", "fstab",
-  "rc-services", "runit-services", "dinit-services",
+  "rc-services", "runit-services", "dinit-services", "sysmd-services",
   "modules",
   "ssh", "edit",
 }
