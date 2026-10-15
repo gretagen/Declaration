@@ -4,9 +4,10 @@
 install_systemd() {
     # The zeta systemd package provides the daemon + userspace tools.
     # Check the two pieces the rest of the port actually needs: the PID1
-    # binary (kernel init= points here) and systemctl (universal
+    # entry point (/sbin/systemd — kernel init= points here, matching the
+    # /sbin layout of the other three inits) and systemctl (universal
     # shutdown/reboot wrapper dispatches through it).
-    if [ -x /usr/lib/systemd/systemd ] && [ -x /usr/bin/systemctl ]; then
+    if [ -x /sbin/systemd ] && [ -x /usr/bin/systemctl ]; then
         echo "  systemd is already installed."
         return
     fi
