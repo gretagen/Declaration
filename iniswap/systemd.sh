@@ -17,35 +17,99 @@ install_systemd() {
 }
 
 generate_systemd_services() {
-    # Units ship with the systemd package; nothing to generate beyond the
-    # admin dirs and the Haliade getty drop-ins (getty must clear its own
-    # tty — with the packaged --noclear a supervisor restart stacks a second
-    # login prompt instead of replacing the first).
+    # Units ship with the systemd package; everything generated here is a
+    # Haliade admin drop-in under /etc/systemd/system (survives package
+    # reinstalls of /usr/lib/systemd).
+
     mkdir -p /etc/systemd/system/multi-user.target.wants
 
-    mkdir -p /etc/systemd/system/getty@.service.d
-    cat > /etc/systemd/system/getty@.service.d/50-haliade.conf << 'GETTY'
-# Haliade OS — getty must clear its own tty before prompting.
-# The packaged ExecStart passes --noclear; with the flag a supervisor
-# restart appends a second prompt instead of replacing the first, and the
-# tty ends up with several stacked login lines. Same fix as the runit and
-# dinit getty services.
+    # --- system bus -------------------------------------------------------
+    # Type=dbus's name-watch for org.freedesktop.DBus never completes on
+    # this rootfs even with the daemon alive: the job burns the whole
+    # start timeout, then every retry fails behind the first instance
+    # holding the socket. Run the classic self-binding daemon as
+    # Type=simple (the OpenRC/runit invocation) and pull it in directly:
+    # "started" = process up, no bus name-watch involved.
+    mkdir -p /etc/systemd/system/dbus.service.d
+    cat > /etc/systemd/system/dbus.service.d/50-haliade.conf << 'DBUS'
 [Service]
+Type=simple
+ExecStartPre=/usr/bin/mkdir -p /run/dbus
 ExecStart=
-ExecStart=-/usr/bin/agetty --noreset - ${TERM}
-GETTY
+ExecStart=/usr/bin/dbus-daemon --system --nofork --nopidfile
+DBUS
 
-    mkdir -p /etc/systemd/system/serial-getty@.service.d
-    cat > /etc/systemd/system/serial-getty@.service.d/50-haliade.conf << 'SERIALGETTY'
-# Haliade OS — getty must clear its own tty before prompting.
-# The packaged ExecStart passes --noclear; with the flag a supervisor
-# restart appends a second prompt instead of replacing the first, and the
-# tty ends up with several stacked login lines. Same fix as the runit and
-# dinit getty services.
+    # The daemon binds /run/dbus/system_bus_socket itself, so the socket
+    # unit must not hold that path (or the bind fails). Redirect it to an
+    # unused path; it stays orderable for Requires=dbus.socket.
+    mkdir -p /etc/systemd/system/dbus.socket.d
+    cat > /etc/systemd/system/dbus.socket.d/50-haliade.conf << 'DBUSSOCKET'
+[Socket]
+ListenStream=
+ListenStream=/run/dbus/activation-unused
+DBUSSOCKET
+
+    # dbus.service is started by a direct wants symlink, not socket
+    # activation, so "After=dbus.socket" no longer implies the daemon is
+    # up. Order the bus clients after the daemon itself.
+    mkdir -p /etc/systemd/system/systemd-logind.service.d
+    cat > /etc/systemd/system/systemd-logind.service.d/50-haliade.conf << 'LOGIND'
+[Unit]
+Wants=dbus.service
+After=dbus.service
+LOGIND
+
+    mkdir -p /etc/systemd/system/iwd.service.d
+    cat > /etc/systemd/system/iwd.service.d/50-haliade.conf << 'IWD'
+[Unit]
+After=dbus.service
+IWD
+
+    ln -sfn ../../../../usr/lib/systemd/system/dbus.service \
+        /etc/systemd/system/multi-user.target.wants/dbus.service
+
+    # --- network ------------------------------------------------------------
+    # Run the same stack the other three inits run: connmand does DHCP (wired)
+    # and writes /etc/resolv.conf; iwd handles wireless (already enabled,
+    # picked up by connman as its wifi backend over D-Bus). systemd-networkd
+    # is deliberately NOT used: it never writes /etc/resolv.conf without
+    # systemd-resolved, and it would race connman for the interface.
+    cat > /usr/lib/systemd/system/connman.service << 'CONNMAN'
+[Unit]
+Description=Connection service
+Documentation=man:connmand.service(8)
+Wants=dbus.service
+After=dbus.service
+
 [Service]
-ExecStart=
-ExecStart=-/usr/bin/agetty --noreset --keep-baud 115200,57600,38400,9600 - ${TERM}
-SERIALGETTY
+Type=simple
+ExecStart=/usr/sbin/connmand -n
 
-    echo "  systemd getty drop-ins installed."
+[Install]
+WantedBy=multi-user.target
+CONNMAN
+
+    ln -sfn ../../../../usr/lib/systemd/system/connman.service \
+        /etc/systemd/system/multi-user.target.wants/connman.service
+
+    # --- console font / keymap ----------------------------------------------
+    # systemd-vconsole-setup reads /etc/vconsole.conf (the other inits read
+    # /etc/conf.d/{consolefont,keymaps}). Mirror the declared values so the
+    # swap doesn't lose the tty font/keymap.
+    local font keymap
+    font=$(sed -n 's/^consolefont="\([^"]*\)"/\1/p' /etc/conf.d/consolefont 2>/dev/null)
+    keymap=$(sed -n 's/^keymap="\([^"]*\)"/\1/p' /etc/conf.d/keymaps 2>/dev/null)
+    {
+        [ -n "$keymap" ] && echo "KEYMAP=$keymap"
+        [ -n "$font" ] && echo "FONT=$font"
+    } > /etc/vconsole.conf
+
+    # --- gettys -----------------------------------------------------------
+    # Nothing to generate: the stock getty@/serial-getty@ units work as-is
+    # once /usr/bin/agetty exists (the packaged ExecStart=-/usr/bin/agetty
+    # silently swallowed the missing binary — "-" ignores the failure).
+    # util-linux's agetty ships there; do not add drop-ins here again
+    # without a failing case to justify them.
+
+    echo "  systemd service drop-ins installed (dbus, logind, iwd)."
 }
