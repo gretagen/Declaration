@@ -141,7 +141,7 @@ end
 -- print summary
 function sync.summary(changes)
   if #changes == 0 then
-    print("System is already synchronized — no changes required.")
+    print("System seems to be already synchronized, no changes required.")
     return
   end
   local groups = {}
@@ -151,7 +151,7 @@ function sync.summary(changes)
     table.insert(groups[s], c)
   end
   print()
-  print("  Haliade Synchronize — Plan")
+  print("  Haliade Synchronization plan : ")
   print("  " .. string.rep("=", 40))
   print()
   for s, entries in pairs(groups) do
@@ -217,7 +217,7 @@ if arg and arg[0] and arg[0]:match("sync%.lua$") then
 
   if #changes == 0 then os.exit(0) end
 
-  io.write("Proceed with synchronization? [y/N]: ")
+  io.write("Synchronize system? [y/N]: ")
   io.flush()
   local answer = io.read()
   local ok = answer and (answer:lower() == "y" or answer:lower() == "yes")
@@ -230,14 +230,14 @@ if arg and arg[0] and arg[0]:match("sync%.lua$") then
   local _, failures = sync.apply(changes)
   if failures and failures > 0 then
     print("Synchronization finished with " .. failures .. " failure(s).")
-    io.stderr:write("No new generation created — fix errors and re-run, or boot a previous generation.\n")
+    io.stderr:write("No new generation has been created : fix errors first.\n")
   else
     print("Creating post-sync generation...")
     if not sync.shell("chronos create 'post-sync'") then
-      io.stderr:write("[warn] chronos create failed — system is synced but no new boot entry was added.\n")
+      io.stderr:write("[warn] chronos create failed : system is synced but no new boot entry was added.\n")
       io.stderr:write("        Check btrfs layout (@ / @snapshots) and run: chronos create 'post-sync'\n")
     end
-    print("Synchronization complete.")
+    print("Synchronization completed.")
   end
 end
 
