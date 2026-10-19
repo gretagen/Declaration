@@ -96,7 +96,7 @@ function gen.plan(cfg, sync)
   local need_cmdline = false
   if current_cmdline_str and current_cmdline_str ~= desired_cmdline then
     need_cmdline = true
-    -- Patch only the first (default /Haliade OS) cmdline so chronos can
+    -- Patch only the first (default /Haliade SYS) cmdline so chronos can
     -- harvest extras; full multi-entry rewrite happens via chronos.
     new = new:gsub("cmdline:%s*[^\n]*", "cmdline: " .. desired_cmdline, 1)
   end

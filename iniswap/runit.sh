@@ -23,7 +23,7 @@ generate_runit_services() {
 #!/bin/sh
 exec 2>&1
 export PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
-# runit stage 1 — early init (Haliade OS)
+# runit stage 1 — early init (Haliade system)
 
 # Mount virtual filesystems (skip if already mounted by initramfs)
 mountpoint -q /proc || mount -t proc proc /proc
@@ -126,7 +126,7 @@ STAGE2
 exec 2>&1
 export PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
 export SVDIR=/etc/service
-# runit stage 3 — shutdown (Haliade OS)
+# runit stage 3 — shutdown (Haliade system)
 
 # Stop all services
 for svc in /etc/service/*/run; do
