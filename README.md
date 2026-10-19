@@ -1,1 +1,1 @@
-official declarative system configuration for Haliade OS 
+official declarative system configuration for the Haliade system
