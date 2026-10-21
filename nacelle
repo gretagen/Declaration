@@ -15,7 +15,9 @@ set -- "${VERBOSE_ARGS[@]}"
 
 # Install prefix. NACELLE_LIB points the CLI at another tree, so a working
 # copy can be tested without repacking the nacelle package.
-LIB="${NACELLE_LIB:-/usr/lib/nacelle}"
+LIB="${NACELLE_LIB:-/home/gretagen/nacelle}"
+# also visible to the lua side, which resolves generators against it
+export NACELLE_LIB="$LIB"
 
 if [ $# -eq 0 ]; then
     echo "nacelle: I don't know what to synchronize."
@@ -59,24 +61,35 @@ case "$1" in
                 echo "Run nacelle help"
                 exit 1
                 ;;
+                
         esac
+        ;;
+
+    see-enabled)
+        exec lua "$LIB/plugins.lua"
         ;;
 
     help)
         cat << 'EOF'
 nacelle : Haliade declarative system and home handlers.
 
-Usage: nacelle spin {house|system} [/path/to/file.lua] [-v|--verbose]
+Usage: nacelle [action] {category} [/path/to/file.lua] []
 
-Commands:
-  spin house             Home (dotfiles, local state)
-  spin system            System definition
+Categories:
+  house                  Home (dotfiles, local state)
+  system                 System definition
+
+Actions
   help                   Show this help
-
+  spin                   Synchronize a category
+  repower                Rebuild a category
+  see-enabled            See enabled generators
+  
 Options:
-  -v, --verbose          Print the [v] diagnostics (planner progress,
+  --verbose          Print the [v] diagnostics (planner progress,
                          file reads, shell commands). Errors are always
                          printed.
+  --no-generation
 
 Synchronizing the system needs superuser privileges;
 synchronizing the house does not, but will give the user a warning.

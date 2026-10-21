@@ -78,6 +78,18 @@ local function load_enabled_file(path)
   return res2
 end
 
+-- Same as enabled_generators, but also reports where the list came from:
+-- the second return is the enable file path, or nil when the built-in
+-- default list is in use (fresh installs, package tests).
+function plugins.enabled_source(path)
+  local p = path or DEFAULT_ENABLED_FILE
+  local list = load_enabled_file(p)
+  if list == nil then
+    return DEFAULT_GENERATORS, nil
+  end
+  return list, p
+end
+
 -- Return the list of enabled generators for a sync run. The optional argument
 -- overrides the default file location (used by package tests).
 function plugins.enabled_generators(path)
@@ -86,6 +98,53 @@ function plugins.enabled_generators(path)
     return DEFAULT_GENERATORS
   end
   return list
+end
+
+-- CLI entry point, reached only when this file is exec'd directly
+-- (`nacelle see-enabled` runs `lua $NACELLE_LIB/plugins.lua`): print the
+-- effective generator list, in order, saying where it comes from and whether
+-- each name would actually load. Exits 1 when an enabled generator cannot
+-- be found, so it is usable as a pre-flight check.
+if arg and arg[0] and arg[0]:match("plugins%.lua$") then
+  local LIB = os.getenv("NACELLE_LIB")
+  if not LIB or LIB == "" then LIB = "/usr/lib/nacelle" end
+
+  local core = {}
+  for _, name in ipairs(DEFAULT_GENERATORS) do core[name] = true end
+
+  local function resolves(name)
+    local f = io.open(LIB .. "/generators/" .. name .. ".lua", "r")
+    if f then f:close() return true end
+    return false
+  end
+
+  local list, src = plugins.enabled_source()
+  if src then
+    print("enabled generators : " .. src .. " (" .. #list .. ")")
+  else
+    print("enabled generators : built-in default list (" .. #list .. ")")
+  end
+  print()
+
+  local missing = 0
+  for i, name in ipairs(list) do
+    local kind
+    if resolves(name) then
+      kind = core[name] and "core" or "extra"
+    else
+      kind = "MISSING"
+      missing = missing + 1
+    end
+    print(string.format("%3d  %-24s %s", i, tostring(name), kind))
+  end
+
+  if missing > 0 then
+    print()
+    print(missing .. " generator(s) are enabled but no file provides them.")
+    print("Install the package shipping them, or remove the name from the enable file.")
+    os.exit(1)
+  end
+  os.exit(0)
 end
 
 return plugins
