@@ -79,7 +79,7 @@ end
 -- Plugin config dir: any *.lua here runs during config.load with the working
 -- `defaults` and `schema` tables in scope, so a plugin can contribute its own
 -- section defaults + type validation without anyone editing config.lua.
-local PLUGIN_CONFIG_DIR = "/etc/haliade/plugin-configs"
+local PLUGIN_CONFIG_DIR = "/etc/nacelle/plugin-configs"
 
 -- Execute every *.lua file in a plugin config dir with the working defaults/
 -- schema tables exposed. Each file runs in an env whose globals fall through
@@ -147,7 +147,7 @@ local function apply_plugin_configs(dir, defaults, schema)
 end
 
 function config.load(path, plugin_dir)
-  path = path or "/etc/haliade/definition.lua"
+  path = path or "/etc/nacelle/definition.lua"
   local f, err = io.open(path, "r")
   if not f then
     return nil, "cannot open " .. path .. ": " .. (err or "unknown error")

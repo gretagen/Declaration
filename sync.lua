@@ -1,4 +1,4 @@
-package.path = "/usr/lib/declaration/?.lua;/usr/lib/declaration/generators/?.lua;" .. package.path
+package.path = "/usr/lib/nacelle/?.lua;/usr/lib/nacelle/generators/?.lua;" .. package.path
 
 -- Which generators run is decided by /etc/haliade/enabled_modules.lua
 -- (see plugins.lua); sync.lua does not own that list.

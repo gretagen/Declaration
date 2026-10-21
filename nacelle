@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+set -e
+
+if [ $# -eq 0 ]; then
+    echo "nacelle: I don't know what to synchronize."
+    echo "Usage: nacelle <category> [/path]"
+    exit 1
+fi
+
+case "$1" in
+    house)
+        if [ "$EUID" -ne 0 ]; then
+            echo "You are synchronizing the house without privileges."
+            echo "If there are system paths, they will not be modified, and a generation won't be created."
+            echo "Proceed with caution."
+        else
+            echo "Please verify what's in the house before synchronizing it as root."
+            echo "We will not be responsible of the damage a house will do to your system."
+            echo "Proceed with caution."
+        fi
+        sleep 2
+        exec lua /usr/lib/nacelle/house-handlers/house_sync.lua "${@:2}"
+        ;;
+
+    definition)
+        if [ "$EUID" -ne 0 ]; then
+            echo "To synchronize your system definition, you must run this with superuser privileges."
+            exit 1
+        fi
+        exec lua /usr/lib/nacelle/sync.lua "${@:2}"
+        ;;
+
+    help)
+        cat << 'EOF'
+nacelle : Haliade declarative system and home handlers.
+
+Usage: nacelle {house|definition|help} [/path/to/file.lua]
+
+Commands:
+  house                 System house
+  definition            System definition
+  help                  Show this help
+
+Synchronizing the system definition needs superuser privileges;
+synchronizing the house does not, but will give the user a warning.
+EOF
+        ;;
+
+    *)
+        echo "Error: Unknown category '$1'"
+        echo "Run nacelle help"
+        exit 1
+        ;;
+esac

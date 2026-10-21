@@ -17,7 +17,7 @@
 
 local plugins = {}
 
-local DEFAULT_ENABLED_FILE = "/etc/haliade/enabled_modules.lua"
+local DEFAULT_ENABLED_FILE = "/etc/nacelle/enabled_modules.lua"
 
 -- Built-in default, used when the enable file does not exist. Keep in sync
 -- with the file shipped in the rootfs (etc/haliade/enabled_modules.lua).
