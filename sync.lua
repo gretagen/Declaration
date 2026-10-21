@@ -1,4 +1,9 @@
-package.path = "/usr/lib/nacelle/?.lua;/usr/lib/nacelle/generators/?.lua;" .. package.path
+-- Install prefix, overridable so a working tree can be tested without a
+-- repack (NACELLE_LIB=/home/gretagen/nacelle ./nacelle spin system).
+local LIB = os.getenv("NACELLE_LIB")
+if not LIB or LIB == "" then LIB = "/usr/lib/nacelle" end
+
+package.path = LIB .. "/?.lua;" .. LIB .. "/generators/?.lua;" .. package.path
 
 -- Which generators run is decided by /etc/nacelle/enabled_modules.lua
 -- (see plugins.lua); sync.lua does not own that list.
@@ -8,10 +13,22 @@ local config = require("config")
 
 local sync = {}
 
--- verbose output
+-- verbose diagnostics: silent unless the CLI passed --verbose (which exports
+-- NACELLE_VERBOSE=1). Errors never travel through vprint: generator load
+-- failures and planner crashes are written straight to stderr so a normal
+-- run still shows them.
+local VERBOSE = os.getenv("NACELLE_VERBOSE") ~= nil
+
 function sync.vprint(...)
+  if not VERBOSE then return end
   io.stderr:write("[v] ")
   io.stderr:write(string.format(...))
+  io.stderr:write("\n")
+end
+
+function sync.eprint(fmt, ...)
+  io.stderr:write("[error] ")
+  io.stderr:write(string.format(fmt, ...))
   io.stderr:write("\n")
 end
 
@@ -97,7 +114,9 @@ for _, name in ipairs(enabled_generators) do
     table.insert(generators, gen)
     sync.vprint("  generator '%s' loaded", name)
   else
-    sync.vprint("  generator '%s' FAILED: %s", name, tostring(gen))
+    -- always visible: a silently dropped generator would make the sync
+    -- report success while planning with a smaller set than the config asks
+    sync.eprint("generator '%s' failed to load: %s", name, tostring(gen))
   end
 end
 sync.vprint("%d generators loaded", #generators)
@@ -118,7 +137,8 @@ function sync.collect(cfg)
         table.insert(changes, c)
       end
     else
-      sync.vprint("  → ERROR: %s", tostring(plans))
+      -- always visible, same reason as a failed load: the plan is incomplete
+      sync.eprint("planner '%s' crashed: %s", name, tostring(plans))
     end
   end
   -- Group by type (+ before ~ before -) so a package swap installs the

@@ -2,6 +2,21 @@
 
 set -e
 
+# -v/--verbose may appear anywhere in the arguments: pull it out and export
+# NACELLE_VERBOSE so the lua side can switch its diagnostics on.
+VERBOSE_ARGS=()
+for a in "$@"; do
+    case "$a" in
+        -v|--verbose) export NACELLE_VERBOSE=1 ;;
+        *) VERBOSE_ARGS+=("$a") ;;
+    esac
+done
+set -- "${VERBOSE_ARGS[@]}"
+
+# Install prefix. NACELLE_LIB points the CLI at another tree, so a working
+# copy can be tested without repacking the nacelle package.
+LIB="${NACELLE_LIB:-/usr/lib/nacelle}"
+
 if [ $# -eq 0 ]; then
     echo "nacelle: I don't know what to synchronize."
     echo "Usage: nacelle spin {house|system} [/path]"
@@ -22,7 +37,7 @@ case "$1" in
                     echo "Proceed with caution."
                 fi
                 sleep 2
-                exec lua /usr/lib/nacelle/house-handlers/house_sync.lua "${@:3}"
+                exec lua "$LIB/house-handlers/house_sync.lua" "${@:3}"
                 ;;
 
             system)
@@ -30,7 +45,7 @@ case "$1" in
                     echo "To synchronize your system, you must run this with superuser privileges."
                     exit 1
                 fi
-                exec lua /usr/lib/nacelle/sync.lua "${@:3}"
+                exec lua "$LIB/sync.lua" "${@:3}"
                 ;;
 
             "")
@@ -51,12 +66,17 @@ case "$1" in
         cat << 'EOF'
 nacelle : Haliade declarative system and home handlers.
 
-Usage: nacelle spin {house|system} [/path/to/file.lua]
+Usage: nacelle spin {house|system} [/path/to/file.lua] [-v|--verbose]
 
 Commands:
   spin house             Home (dotfiles, local state)
   spin system            System definition
   help                   Show this help
+
+Options:
+  -v, --verbose          Print the [v] diagnostics (planner progress,
+                         file reads, shell commands). Errors are always
+                         printed.
 
 Synchronizing the system needs superuser privileges;
 synchronizing the house does not, but will give the user a warning.

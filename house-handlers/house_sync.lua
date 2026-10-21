@@ -1,13 +1,31 @@
-package.path = "/usr/lib/nacelle/house-handlers/house_generators/?.lua;/usr/lib/nacelle/house-handlers/?.lua;" .. package.path
+-- Install prefix, overridable so a working tree can be tested without a
+-- repack (NACELLE_LIB=/home/gretagen/nacelle ./nacelle spin house).
+local LIB = os.getenv("NACELLE_LIB")
+if not LIB or LIB == "" then LIB = "/usr/lib/nacelle" end
+
+package.path = LIB .. "/house-handlers/house_generators/?.lua;"
+  .. LIB .. "/house-handlers/?.lua;" .. package.path
 
 local config = require("config")
 
 local house_sync = {}
 
--- verbose output
+-- verbose diagnostics: silent unless the CLI passed --verbose (which exports
+-- NACELLE_VERBOSE=1). Errors never travel through vprint: generator load
+-- failures and planner crashes are written straight to stderr so a normal
+-- run still shows them.
+local VERBOSE = os.getenv("NACELLE_VERBOSE") ~= nil
+
 function house_sync.vprint(...)
+  if not VERBOSE then return end
   io.stderr:write("[v] ")
   io.stderr:write(string.format(...))
+  io.stderr:write("\n")
+end
+
+function house_sync.eprint(fmt, ...)
+  io.stderr:write("[error] ")
+  io.stderr:write(string.format(fmt, ...))
   io.stderr:write("\n")
 end
 
@@ -133,7 +151,9 @@ for _, name in ipairs(generator_names) do
     table.insert(generators, gen)
     house_sync.vprint("  generator '%s' loaded", name)
   else
-    house_sync.vprint("  generator '%s' FAILED: %s", name, tostring(gen))
+    -- always visible: a silently dropped generator would make the run
+    -- report success while planning with a smaller set than the house asks
+    house_sync.eprint("house generator '%s' failed to load: %s", name, tostring(gen))
   end
 end
 house_sync.vprint("%d generators loaded", #generators)
@@ -154,7 +174,8 @@ function house_sync.collect(cfg)
         table.insert(changes, c)
       end
     else
-      house_sync.vprint("  → ERROR: %s", tostring(plans))
+      -- always visible, same reason as a failed load: the plan is incomplete
+      house_sync.eprint("house planner '%s' crashed: %s", name, tostring(plans))
     end
   end
   -- stable sort: order by change type, keep declaration order within a type
