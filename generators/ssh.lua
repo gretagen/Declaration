@@ -32,7 +32,7 @@ function gen.plan(cfg, sync)
 
   local changes = {}
 
-  if current ~= desired then
+  if sync.differs(current, desired) then
     table.insert(changes, sync.change("~", "ssh", "/etc/ssh/sshd_config", "update SSH daemon configuration",
       function() sync.write_file(path, desired) end))
   end
@@ -44,7 +44,7 @@ function gen.plan(cfg, sync)
     end
     local ak_path = "/root/ssh/authorized_keys"
     local current_keys = sync.read_file(ak_path) or ""
-    if current_keys ~= keys_content then
+    if sync.differs(current_keys, keys_content) then
       table.insert(changes, sync.change("~", "ssh", ak_path, "update authorized keys",
         function()
           sync.shell("mkdir -p /root/ssh")

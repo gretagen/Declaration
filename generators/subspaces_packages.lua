@@ -111,6 +111,22 @@ function gen.plan(cfg, sync)
               end
               return ok
             end))
+        elseif sync.repower then
+          -- repower: run the install command again on an already installed
+          -- package. What that does depends on the distro's package manager
+          -- (pacman reinstalls, apt-get converges to the same state), but it
+          -- is the subspace equivalent of rebuilding instead of skipping.
+          table.insert(changes, sync.change("~",
+            "subspace-packages (" .. distro .. ")", pkg,
+            "reapply : " .. cmds.install,
+            function(_, s)
+              io.stderr:write("[apply] " .. distro .. ": reapplying " .. pkg .. "\n")
+              local ok = s.shell("subspace-run " .. distro .. " " .. cmds.install .. " " .. pkg)
+              if not ok then
+                io.stderr:write("[warn] '" .. pkg .. "' — reapply failed in " .. distro .. "\n")
+              end
+              return ok
+            end))
         end
       end
 

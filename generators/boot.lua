@@ -101,7 +101,7 @@ function gen.plan(cfg, sync)
     new = new:gsub("cmdline:%s*[^\n]*", "cmdline: " .. desired_cmdline, 1)
   end
 
-  if globals_dirty or need_cmdline or new ~= content then
+  if globals_dirty or need_cmdline or new ~= content or sync.repower then
     table.insert(changes, sync.change("~", "boot", "/boot/limine.conf",
       "update bootloader globals/cmdline", function()
         sync.write_file(path, new)

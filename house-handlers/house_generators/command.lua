@@ -39,11 +39,16 @@ function gen.plan(cfg, house_sync)
     else
       local display = (wd and wd .. " $ " or "") .. cmd
 
+      -- creates/check are "already done" detectors: repower ignores them so
+      -- every command genuinely reruns (a rebuild that skipped on its own
+      -- hints would not be a rebuild)
       local skip_reason
-      if creates and house_sync.file_exists(creates) then
-        skip_reason = "creates exists: " .. creates
-      elseif check and house_sync.shell_ok(check) then
-        skip_reason = "check passed: " .. check
+      if not house_sync.repower then
+        if creates and house_sync.file_exists(creates) then
+          skip_reason = "creates exists: " .. creates
+        elseif check and house_sync.shell_ok(check) then
+          skip_reason = "check passed: " .. check
+        end
       end
 
       if skip_reason then

@@ -8,7 +8,7 @@ function gen.plan(cfg, house_sync)
 
   for path, content in pairs(cfg.edit) do
     local current = house_sync.read_file(path)
-    if current ~= content then
+    if house_sync.differs(current, content) then
       local c = house_sync.change("~", "edit", path, nil,
         function() return house_sync.write_file(path, content) end)
       if not house_sync.writable_path(path) then

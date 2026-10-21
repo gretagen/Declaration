@@ -12,7 +12,7 @@ function gen.plan(cfg, sync)
     desired = desired .. "module=\"" .. mod .. "\"\n"
   end
 
-  if content == desired then return {} end
+  if not sync.differs(content, desired) then return {} end
 
   return {
     sync.change("~", "modules", "/etc/conf.d/modules", "update kernel modules list",

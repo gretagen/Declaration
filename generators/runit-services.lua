@@ -130,12 +130,14 @@ function gen.plan(cfg, sync)
 
   for _, svc in ipairs(cfg["runit-services"] or {}) do
     local dir = runit_dir_for(svc)
-    if current[dir] then
+    local already = current[dir]
+    if already and not sync.repower then
       -- already supervised
     else
       local script = runit_script_for(svc)
       if script then
-        table.insert(changes, sync.change("+", "runit-services", svc, "create runit service",
+        table.insert(changes, sync.change(already and "~" or "+", "runit-services", svc,
+          already and "reapply : rewrite run script" or "create runit service",
           function()
             local svc_dir = sv_dir .. "/" .. dir
             sync.shell("mkdir -p " .. svc_dir)

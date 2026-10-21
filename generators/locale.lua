@@ -6,7 +6,7 @@ function gen.plan(cfg, sync)
 
   local current = sync.read_file("/etc/locale.conf")
   local desired = "LANG=" .. cfg.locale .. "\n"
-  if current == desired then return {} end
+  if not sync.differs(current, desired) then return {} end
 
   local generated = sync.shell_output("locale -a 2>/dev/null"):match(cfg.locale)
 

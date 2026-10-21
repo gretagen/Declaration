@@ -15,10 +15,14 @@ function gen.plan(cfg, sync)
   end
 
   for _, svc in ipairs(cfg["rc-services"] or {}) do
-    if current[svc] then
+    -- repower re-runs the add: rc-update on an already added service is a
+    -- no-op, so forcing it is safe and keeps the rebuild honest
+    local already = current[svc]
+    if already and not sync.repower then
       -- already enabled
     elseif sync.read_file("/etc/init.d/" .. svc) then
-      table.insert(changes, sync.change("+", "rc-services", svc, "add to default runlevel",
+      table.insert(changes, sync.change(already and "~" or "+", "rc-services", svc,
+        already and "reapply : rc-update add" or "add to default runlevel",
         function() return sync.shell("rc-update add " .. svc .. " default") end))
     else
       io.stderr:write("[warn] rc-services: no OpenRC init script for '" .. svc .. "', skipping\n")

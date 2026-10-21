@@ -20,10 +20,12 @@ function gen.plan(cfg, sync)
   end
 
   for _, svc in ipairs(cfg["dinit-services"] or {}) do
-    if enabled[svc] then
+    local already = enabled[svc]
+    if already and not sync.repower then
       -- already enabled
     elseif sync.read_file(defs_dir .. "/" .. svc) then
-      table.insert(changes, sync.change("+", "dinit-services", svc, "enable in boot.d",
+      table.insert(changes, sync.change(already and "~" or "+", "dinit-services", svc,
+        already and "reapply : enable in boot.d" or "enable in boot.d",
         function()
           sync.shell("mkdir -p " .. boot_dir)
           return sync.shell("ln -sfn ../" .. svc .. " " .. boot_dir .. "/" .. svc)

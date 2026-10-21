@@ -18,6 +18,20 @@ local function valid_name(pkg)
   return pkg:match("^[A-Za-z0-9][A-Za-z0-9._+-]*$") ~= nil
 end
 
+-- repower rebuild for one isolated package: -Solve rebuilds its reserved
+-- store in place (--isolate semantics), then -ReProvide reinstalls it there.
+local function rebuild(s, q)
+  if not s.shell("zeta -Solve --pass --isolate " .. q) then
+    io.stderr:write("[warn] " .. q .. " — zeta -Solve --isolate failed\n")
+    return false
+  end
+  if not s.shell("zeta -ReProvide --pass --force --isolate " .. q) then
+    io.stderr:write("[warn] " .. q .. " — zeta -ReProvide --isolate failed\n")
+    return false
+  end
+  return true
+end
+
 local function list_dir(sync, dir)
   local seen = {}
   local out = sync.shell_output("ls -1 " .. shquote(dir))
@@ -56,10 +70,26 @@ function gen.plan(cfg, sync)
               io.stderr:write("[warn] '" .. pkg .. "' — not found, network error, or build failure\n")
               return false
             end
+          elseif sync.repower then
+            -- already installed but only now entering the declaration:
+            -- rebuild it like any other declared package
+            if not rebuild(s, q) then return false end
           end
           s.shell("mkdir -p " .. shquote(DECLARED_DIR))
           return s.shell("touch " .. shquote(DECLARED_DIR .. "/" .. pkg))
         end))
+    end
+  end
+
+  -- repower: rebuild every declared isolated package (see packages.lua)
+  if sync.repower then
+    for _, pkg in ipairs(desired_list) do
+      if desired[pkg] and declared[pkg] then
+        local q = shquote(pkg)
+        table.insert(changes, sync.change("~", "packages-isolated", pkg,
+          "rebuild : zeta -Solve --isolate, then -ReProvide --isolate",
+          function(_, s) return rebuild(s, q) end))
+      end
     end
   end
 

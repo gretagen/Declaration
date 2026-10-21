@@ -66,11 +66,12 @@ function gen.plan(cfg, sync)
   for _, svc in ipairs(cfg["sysmd-services"] or {}) do
     local unit = unit_for_service(svc)
     local unit_file = unit_file_for(unit)
-    if enabled[unit] then
+    local already = enabled[unit]
+    if already and not sync.repower then
       -- already enabled
     elseif sync.read_file(units_dir .. "/" .. unit_file) then
-      table.insert(changes, sync.change("+", "sysmd-services", svc,
-        "enable " .. unit,
+      table.insert(changes, sync.change(already and "~" or "+", "sysmd-services", svc,
+        already and ("reapply : enable " .. unit) or ("enable " .. unit),
         function()
           sync.shell("mkdir -p " .. wants_dir)
           return sync.shell("ln -sfn " .. units_dir .. "/" .. unit_file ..

@@ -13,6 +13,19 @@ local config = require("config")
 
 local sync = {}
 
+-- repower mode: --repower exports NACELLE_REPOWER=1 and every "already
+-- satisfied" gate is bypassed, so the run reapplies and rebuilds everything
+-- even on a converged system (nixos-rebuild switch style). Detection reads
+-- stay untouched: generators still parse what is on disk, they just never
+-- short-circuit to "no change".
+sync.repower = os.getenv("NACELLE_REPOWER") ~= nil
+
+-- single gate helper used by every generator equality check
+function sync.differs(current, desired)
+  if sync.repower then return true end
+  return current ~= desired
+end
+
 -- verbose diagnostics: silent unless the CLI passed --verbose (which exports
 -- NACELLE_VERBOSE=1). Errors never travel through vprint: generator load
 -- failures and planner crashes are written straight to stderr so a normal
@@ -173,6 +186,9 @@ function sync.summary(changes)
   print()
   print("  System Synchronization plan : ")
   print("  " .. string.rep("=", 40))
+  if sync.repower then
+    print("  mode: repower (reapplying and rebuilding everything)")
+  end
   print()
   for s, entries in pairs(groups) do
     print("  [" .. s .. "]")
@@ -190,6 +206,7 @@ end
 -- apply all changes
 function sync.apply(changes)
   local failures = 0
+  local merged_applied = false
   for _, c in ipairs(changes) do
     local sym = c.type == "+" and "[+]" or c.type == "-" and "[-]" or "[~]"
     io.stderr:write(string.format("[apply] %s %s/%s\n", sym, c.section or "?", c.target))
@@ -203,6 +220,22 @@ function sync.apply(changes)
         failures = failures + 1
       else
         io.stderr:write("[ok] " .. sym .. " " .. (c.section or "?") .. "/" .. c.target .. "\n")
+        if (c.section or ""):match("^merged%-packages") then
+          merged_applied = true
+        end
+      end
+    end
+  end
+  -- Post-merge hooks (desktop/icon/font caches, ldconfig, wayland pruning)
+  -- live on the merged_packages generator: run them once, after every merge
+  -- change landed, so a rebuild leaves the host caches consistent.
+  if merged_applied then
+    for _, gen in ipairs(generators) do
+      if type(gen.post_merge) == "function" then
+        local ok, err = pcall(gen.post_merge, sync)
+        if not ok then
+          io.stderr:write("[error] post_merge: " .. tostring(err) .. "\n")
+        end
       end
     end
   end
@@ -253,9 +286,10 @@ if arg and arg[0] and arg[0]:match("sync%.lua$") then
     io.stderr:write("No new generation has been created : fix errors first.\n")
   else
     print("Creating post-sync generation...")
-    if not sync.shell("chronos create 'post-sync'") then
+    local label = sync.repower and "post-repower" or "post-sync"
+    if not sync.shell("chronos create '" .. label .. "'") then
       io.stderr:write("[warn] chronos create failed : system is synced but no new boot entry was added.\n")
-      io.stderr:write("        Check btrfs layout (@ / @snapshots) and run: chronos create 'post-sync'\n")
+      io.stderr:write("        Check btrfs layout (@ / @snapshots) and run: chronos create '" .. label .. "'\n")
     end
     print("Synchronization completed.")
   end

@@ -14,7 +14,7 @@ function gen.plan(cfg, sync)
   local current = content:match('consolefont%s*=%s*"([^"]+)"')
     or content:match('consolefont=%s*(%S+)') or "latarcyrheb-sun16"
 
-  if current ~= cfg.console_font then
+  if sync.differs(current, cfg.console_font) then
     table.insert(changes, sync.change("~", "console_font", "/etc/conf.d/consolefont",
       current .. "  →  " .. cfg.console_font,
       function()
@@ -30,7 +30,7 @@ function gen.plan(cfg, sync)
   local vc = sync.read_file("/etc/vconsole.conf") or ""
   local cur_vc = vc:match("FONT%s*=%s*(%S+)")
 
-  if cur_vc ~= cfg.console_font then
+  if sync.differs(cur_vc, cfg.console_font) then
     table.insert(changes, sync.change("~", "console_font", "/etc/vconsole.conf",
       (cur_vc or "(unset)") .. "  →  " .. cfg.console_font,
       function()

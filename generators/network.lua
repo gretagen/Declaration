@@ -58,7 +58,7 @@ function gen.plan(cfg, sync)
     content = content .. "\n[ipv6]\nmethod=disabled\n"
 
     local current = sync.read_file(filepath)
-    if current ~= content then
+    if sync.differs(current, content) then
       table.insert(changes, sync.change("~", "network", conn.name .. ".nmconnection",
         current and "update" or "create", function()
           return sync.write_file(filepath, content)

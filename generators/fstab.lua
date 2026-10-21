@@ -114,7 +114,7 @@ function gen.plan(cfg, sync)
   table.insert(lines, "")
   local desired = table.concat(lines, "\n")
 
-  if current == desired then return {} end
+  if not sync.differs(current, desired) then return {} end
 
   return {
     sync.change("~", "fstab", "/etc/fstab", "regenerate filesystem table",

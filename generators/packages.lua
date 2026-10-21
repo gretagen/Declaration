@@ -16,6 +16,20 @@ local function valid_name(pkg)
   return pkg:match("^[A-Za-z0-9][A-Za-z0-9._+-]*$") ~= nil
 end
 
+-- repower rebuild for one package: repair its direct dependencies with
+-- -Solve, then reinstall the package itself with -ReProvide.
+local function rebuild(s, q)
+  if not s.shell("zeta -Solve --pass " .. q) then
+    io.stderr:write("[warn] " .. q .. " — zeta -Solve failed\n")
+    return false
+  end
+  if not s.shell("zeta -ReProvide --pass --force " .. q) then
+    io.stderr:write("[warn] " .. q .. " — zeta -ReProvide failed\n")
+    return false
+  end
+  return true
+end
+
 local function list_dir(sync, dir)
   local seen = {}
   local out = sync.shell_output("ls -1 " .. shquote(dir))
@@ -54,10 +68,29 @@ function gen.plan(cfg, sync)
               io.stderr:write("[warn] '" .. pkg .. "' — not found, network error, or build failure\n")
               return false
             end
+          elseif sync.repower then
+            -- already installed but only now entering the declaration:
+            -- rebuild it like any other declared package
+            if not rebuild(s, q) then return false end
           end
           s.shell("mkdir -p " .. shquote(DECLARED_DIR))
           return s.shell("touch " .. shquote(DECLARED_DIR .. "/" .. pkg))
         end))
+    end
+  end
+
+  -- repower: rebuild every declared package — repair its direct dependencies
+  -- with -Solve, then reinstall the package itself with -ReProvide. This is
+  -- the zeta equivalent of nixos-rebuild switch, and it is what makes a
+  -- converged run produce changes instead of "already synchronized".
+  if sync.repower then
+    for _, pkg in ipairs(desired_list) do
+      if desired[pkg] and declared[pkg] then
+        local q = shquote(pkg)
+        table.insert(changes, sync.change("~", "packages-haliade", pkg,
+          "rebuild : zeta -Solve, then -ReProvide",
+          function(_, s) return rebuild(s, q) end))
+      end
     end
   end
 

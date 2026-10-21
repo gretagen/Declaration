@@ -12,7 +12,7 @@ function gen.plan(cfg, sync)
   local desired = table.concat(lines, "\n") .. "\n"
 
   local current = sync.read_file("/etc/environment") or ""
-  if current == desired then return {} end
+  if not sync.differs(current, desired) then return {} end
 
   return {
     sync.change("~", "env", "/etc/environment", "update environment variables",

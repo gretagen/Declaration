@@ -51,9 +51,11 @@ function gen.plan(cfg, house_sync)
         end
       end
 
-      -- only download when the destination does not exist yet
-      if not exists(target) then
-        local c = house_sync.change("+", "media", target, url,
+      -- only download when the destination does not exist yet; repower
+      -- re-downloads so the file comes straight from its source again
+      local already = exists(target)
+      if not already or house_sync.repower then
+        local c = house_sync.change(already and "~" or "+", "media", target, url,
           function()
             local dir = target:match("^(.*/)")
             if dir then

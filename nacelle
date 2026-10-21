@@ -3,11 +3,14 @@
 set -e
 
 # -v/--verbose may appear anywhere in the arguments: pull it out and export
-# NACELLE_VERBOSE so the lua side can switch its diagnostics on.
+# NACELLE_VERBOSE so the lua side can switch its diagnostics on. --repower is
+# handled the same way: it exports NACELLE_REPOWER so the planners bypass
+# their "already satisfied" gates and reapply everything.
 VERBOSE_ARGS=()
 for a in "$@"; do
     case "$a" in
         -v|--verbose) export NACELLE_VERBOSE=1 ;;
+        --repower)    export NACELLE_REPOWER=1 ;;
         *) VERBOSE_ARGS+=("$a") ;;
     esac
 done
@@ -82,13 +85,16 @@ Categories:
 Actions
   help                   Show this help
   spin                   Synchronize a category
-  repower                Rebuild a category
   see-enabled            See enabled generators
   
 Options:
   --verbose          Print the [v] diagnostics (planner progress,
                          file reads, shell commands). Errors are always
                          printed.
+  --repower          Reapply and rebuild everything instead of only what
+                         changed: zeta -Solve then -ReProvide for declared
+                         packages, every house edit reapplied, every
+                         service re-enabled.
   --no-generation
 
 Synchronizing the system needs superuser privileges;

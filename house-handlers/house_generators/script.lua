@@ -8,7 +8,7 @@ function gen.plan(cfg, house_sync)
 
   for path, content in pairs(cfg.script) do
     local current = house_sync.read_file(path)
-    if current ~= content then
+    if house_sync.differs(current, content) then
       local c = house_sync.change("~", "script", path, nil,
         function() 
         local ok, err = house_sync.write_file(path, content)

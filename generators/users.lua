@@ -162,7 +162,7 @@ function gen.plan(cfg, sync)
                   if not cur[g] then same = false break end
                 end
               end
-              if not same then
+              if not same or sync.repower then
                 local joined = table.concat(want, ",")
                 table.insert(changes, sync.change("~", "users", name .. " groups", joined,
                   function()
@@ -178,7 +178,7 @@ function gen.plan(cfg, sync)
       -- login shell
       if spec.shell ~= nil then
         if type(spec.shell) == "string" then
-          if shells[name] ~= spec.shell then
+          if sync.differs(shells[name], spec.shell) then
             local sh = spec.shell
             table.insert(changes, sync.change("~", "users", name .. " shell", sh,
               function()
@@ -203,7 +203,7 @@ function gen.plan(cfg, sync)
       else
         local wanted = keys_content(spec.ssh_keys)
         local path = "/home/" .. name .. "/.ssh/authorized_keys"
-        if sync.read_file(path) ~= wanted then
+        if sync.differs(sync.read_file(path), wanted) then
           table.insert(changes, sync.change("~", "users", name .. " ssh_keys", path,
             function()
               local ssh_dir = "/home/" .. name .. "/.ssh"

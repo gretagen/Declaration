@@ -11,7 +11,7 @@ function gen.plan(cfg, sync)
   local content = sync.read_file("/etc/conf.d/keymaps") or ""
   local current = content:match('keymap%s*=%s*"([^"]+)"') or "us"
 
-  if current ~= cfg.keymap then
+  if sync.differs(current, cfg.keymap) then
     table.insert(changes, sync.change("~", "keymap", "/etc/conf.d/keymaps",
       current .. "  →  " .. cfg.keymap,
       function()
@@ -26,7 +26,7 @@ function gen.plan(cfg, sync)
   local vc = sync.read_file("/etc/vconsole.conf") or ""
   local cur_vc = vc:match("KEYMAP%s*=%s*(%S+)")
 
-  if cur_vc ~= cfg.keymap then
+  if sync.differs(cur_vc, cfg.keymap) then
     table.insert(changes, sync.change("~", "keymap", "/etc/vconsole.conf",
       (cur_vc or "(unset)") .. "  →  " .. cfg.keymap,
       function()

@@ -5,7 +5,7 @@ function gen.plan(cfg, sync)
   local current = sync.read_file("/etc/hostname")
   if current ~= nil then current = current:gsub("%s+$", "") end
 
-  if current == cfg.hostname then return {} end
+  if not sync.differs(current, cfg.hostname) then return {} end
 
   return {
     sync.change("~", "hostname", "/etc/hostname",

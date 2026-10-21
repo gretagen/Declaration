@@ -5,7 +5,7 @@ function gen.plan(cfg, sync)
   local content = sync.read_file("/etc/conf.d/hwclock") or ""
   local current = content:match('clock%s*=%s*"([^"]+)"') or "UTC"
 
-  if current == cfg.hwclock then return {} end
+  if not sync.differs(current, cfg.hwclock) then return {} end
 
   local value = cfg.hwclock == "local" and "local" or "UTC"
 

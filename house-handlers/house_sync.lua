@@ -10,6 +10,17 @@ local config = require("config")
 
 local house_sync = {}
 
+-- repower mode: --repower exports NACELLE_REPOWER=1 and every "already
+-- satisfied" gate is bypassed, so the house reapplies every edit even when
+-- the file on disk already matches the declaration.
+house_sync.repower = os.getenv("NACELLE_REPOWER") ~= nil
+
+-- single gate helper used by every generator equality check
+function house_sync.differs(current, desired)
+  if house_sync.repower then return true end
+  return current ~= desired
+end
+
 -- verbose diagnostics: silent unless the CLI passed --verbose (which exports
 -- NACELLE_VERBOSE=1). Errors never travel through vprint: generator load
 -- failures and planner crashes are written straight to stderr so a normal
@@ -204,6 +215,9 @@ function house_sync.summary(changes)
   print()
   print("  House Synchronization plan")
   print("  " .. string.rep("=", 40))
+  if house_sync.repower then
+    print("  mode: repower (reapplying every house change)")
+  end
   if house_sync.unprivileged then
     print("  mode: unprivileged (root-only changes will be skipped)")
   end
@@ -310,10 +324,12 @@ if arg and arg[0] and arg[0]:match("house_sync%.lua$") then
       print(skipped .. " change(s) were skipped : re-run with superuser privileges to apply them.")
     end
   else
-    print("Creating post-sync house generation...")
-    if not house_sync.shell("chronos create 'post-sync house'") then
+    print(sync.repower and "Creating post-repower house generation..."
+      or "Creating post-sync house generation...")
+    local label = house_sync.repower and "post-repower house" or "post-sync house"
+    if not house_sync.shell("chronos create '" .. label .. "'") then
       io.stderr:write("[warn] chronos create failed : house is synced but no new boot entry was added.\n")
-      io.stderr:write("        Check btrfs layout (@ / @snapshots) and run: chronos create 'post-sync house'\n")
+      io.stderr:write("        Check btrfs layout (@ / @snapshots) and run: chronos create '" .. label .. "'\n")
     end
     print("House synchronization completed.")
   end

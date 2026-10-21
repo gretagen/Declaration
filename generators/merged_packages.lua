@@ -73,6 +73,20 @@ function gen.plan(cfg, sync)
                 end
                 return ok
               end))
+          elseif sync.repower then
+            -- repower: merge again so the package and its files are laid
+            -- down afresh on the host, like any other rebuild
+            table.insert(changes, sync.change("~",
+              "merged-packages (" .. distro .. ")", pkg,
+              "reapply : subspace-merge",
+              function(_, s)
+                io.stderr:write("[apply] merged-" .. distro .. ": remerging " .. pkg .. " onto host\n")
+                local ok = s.shell("subspace-merge --pass --no-generation " .. distro .. " " .. pkg)
+                if not ok then
+                  io.stderr:write("[warn] '" .. pkg .. "' — remerge failed in " .. distro .. "\n")
+                end
+                return ok
+              end))
           end
         end
 
