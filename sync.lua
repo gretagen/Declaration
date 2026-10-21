@@ -187,7 +187,7 @@ function sync.apply(changes)
     end
   end
   if failures > 0 then
-    io.stderr:write(string.format("\n[warn] %d change(s) failed — review errors above\n", failures))
+    io.stderr:write(string.format("\n[warn] %d change(s) failed : review errors above\n", failures))
   end
   return true, failures
 end
@@ -200,7 +200,7 @@ if arg and arg[0] and arg[0]:match("sync%.lua$") then
     os.exit(1)
   end
 
-  local cfg_path = arg[1] or "/etc/haliade/definition.lua"
+  local cfg_path = arg[1] or "/etc/nacelle/definition.lua"
   sync.vprint("loading config from %s", cfg_path)
   local cfg, err = config.load(cfg_path)
   if not cfg then
