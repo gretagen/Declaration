@@ -3,14 +3,16 @@
 set -e
 
 # -v/--verbose may appear anywhere in the arguments: pull it out and export
-# NACELLE_VERBOSE so the lua side can switch its diagnostics on. --repower is
-# handled the same way: it exports NACELLE_REPOWER so the planners bypass
-# their "already satisfied" gates and reapply everything.
+# NACELLE_VERBOSE so the lua side can switch its diagnostics on.
 VERBOSE_ARGS=()
 for a in "$@"; do
     case "$a" in
         -v|--verbose) export NACELLE_VERBOSE=1 ;;
-        --repower)    export NACELLE_REPOWER=1 ;;
+        --repower)
+            echo "nacelle: --repower is an action now, not an option."
+            echo "Usage: nacelle repower {house|system} [/path]"
+            exit 1
+            ;;
         *) VERBOSE_ARGS+=("$a") ;;
     esac
 done
@@ -22,9 +24,20 @@ LIB="${NACELLE_LIB:-/home/gretagen/nacelle}"
 # also visible to the lua side, which resolves generators against it
 export NACELLE_LIB="$LIB"
 
+# `repower` is the same dispatch as `spin`, with NACELLE_REPOWER exported so
+# the planners bypass their "already satisfied" gates. Rewritten before the
+# case below so privilege checks, targets and paths are handled in one place.
+ACTION=spin
+if [ "$1" = "repower" ]; then
+    export NACELLE_REPOWER=1
+    ACTION=repower
+    set -- spin "${@:2}"
+fi
+
 if [ $# -eq 0 ]; then
     echo "nacelle: I don't know what to synchronize."
     echo "Usage: nacelle spin {house|system} [/path]"
+    echo "       nacelle repower {house|system} [/path]"
     exit 1
 fi
 
@@ -47,20 +60,20 @@ case "$1" in
 
             system)
                 if [ "$EUID" -ne 0 ]; then
-                    echo "To synchronize your system, you must run this with superuser privileges."
+                    echo "nacelle: '$ACTION system' needs superuser privileges."
                     exit 1
                 fi
                 exec lua "$LIB/sync.lua" "${@:3}"
                 ;;
 
             "")
-                echo "nacelle: spin needs a target: house or system."
-                echo "Usage: nacelle spin {house|system} [/path]"
+                echo "nacelle: $ACTION needs a target: house or system."
+                echo "Usage: nacelle $ACTION {house|system} [/path]"
                 exit 1
                 ;;
 
             *)
-                echo "Error: I don't know what to synchronize with '$2'."
+                echo "Error: I don't know what to $ACTION with '$2'."
                 echo "Run nacelle help"
                 exit 1
                 ;;
@@ -85,16 +98,16 @@ Categories:
 Actions
   help                   Show this help
   spin                   Synchronize a category
+  repower                Rebuild a category: reapply and rebuild everything,
+                         not only what changed — zeta -Solve then -ReProvide
+                         for declared packages, every house edit reapplied,
+                         every service re-enabled
   see-enabled            See enabled generators
   
 Options:
   --verbose          Print the [v] diagnostics (planner progress,
                          file reads, shell commands). Errors are always
                          printed.
-  --repower          Reapply and rebuild everything instead of only what
-                         changed: zeta -Solve then -ReProvide for declared
-                         packages, every house edit reapplied, every
-                         service re-enabled.
   --no-generation
 
 Synchronizing the system needs superuser privileges;
