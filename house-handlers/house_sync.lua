@@ -324,12 +324,18 @@ if arg and arg[0] and arg[0]:match("house_sync%.lua$") then
       print(skipped .. " change(s) were skipped : re-run with superuser privileges to apply them.")
     end
   else
-    print(sync.repower and "Creating post-repower house generation..."
-      or "Creating post-sync house generation...")
-    local label = house_sync.repower and "post-repower house" or "post-sync house"
-    if not house_sync.shell("chronos create '" .. label .. "'") then
-      io.stderr:write("[warn] chronos create failed : house is synced but no new boot entry was added.\n")
-      io.stderr:write("        Check btrfs layout (@ / @snapshots) and run: chronos create '" .. label .. "'\n")
+    -- NACELLE_NO_GENERATION comes from the CLI's --no-generation: apply
+    -- everything, but leave the boot entries alone.
+    if os.getenv("NACELLE_NO_GENERATION") then
+      print("Skipping generation creation (--no-generation).")
+    else
+      print(house_sync.repower and "Creating post-repower house generation..."
+        or "Creating post-sync house generation...")
+      local label = house_sync.repower and "post-repower house" or "post-sync house"
+      if not house_sync.shell("chronos create '" .. label .. "'") then
+        io.stderr:write("[warn] chronos create failed : house is synced but no new boot entry was added.\n")
+        io.stderr:write("        Check btrfs layout (@ / @snapshots) and run: chronos create '" .. label .. "'\n")
+      end
     end
     print("House synchronization completed.")
   end

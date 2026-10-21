@@ -8,6 +8,7 @@ VERBOSE_ARGS=()
 for a in "$@"; do
     case "$a" in
         -v|--verbose) export NACELLE_VERBOSE=1 ;;
+        --no-generation) export NACELLE_NO_GENERATION=1 ;;
         --repower)
             echo "nacelle: --repower is an action now, not an option."
             echo "Usage: nacelle repower {house|system} [/path]"
@@ -46,9 +47,7 @@ case "$1" in
         case "$2" in
             house)
                 if [ "$EUID" -ne 0 ]; then
-                    echo "You are synchronizing the house without privileges."
-                    echo "If there are system paths, they will not be modified, and a generation won't be created."
-                    echo "Proceed with caution."
+                echo "parsing"
                 else
                     echo "Please verify what's in the house before synchronizing it as root."
                     echo "We will not be responsible of the damage a house will do to your system."
@@ -63,6 +62,7 @@ case "$1" in
                     echo "nacelle: '$ACTION system' needs superuser privileges."
                     exit 1
                 fi
+                echo "parsing"
                 exec lua "$LIB/sync.lua" "${@:3}"
                 ;;
 
@@ -85,30 +85,43 @@ case "$1" in
         exec lua "$LIB/plugins.lua"
         ;;
 
+    see-registered)
+        exec lua "$LIB/registry.lua" "$@"
+        ;;
+
+    register|unregister|load)
+        if [ "$EUID" -ne 0 ]; then
+            echo "nacelle: '$1' writes to /etc/nacelle and needs superuser privileges."
+            exit 1
+        fi
+        exec lua "$LIB/registry.lua" "$@"
+        ;;
+
     help)
         cat << 'EOF'
 nacelle : Haliade declarative system and home handlers.
 
-Usage: nacelle [action] {category} [/path/to/file.lua] []
+Usage: nacelle [action] {category} [/path/to/file.lua] [option]
 
 Categories:
-  house                  Home (dotfiles, local state)
+  house                  House management
   system                 System definition
 
 Actions
   help                   Show this help
+  register               Backup a category at /etc/nacelle/registered  
+  unregister             Remove a backup at /etc/nacelle/registered
+  load                   Recover a category from /etc/nacelle/registered
   spin                   Synchronize a category
-  repower                Rebuild a category: reapply and rebuild everything,
-                         not only what changed (zeta -Solve then -ReProvide
-                         for declared packages, every house edit reapplied,
-                         every service re-enabled)
+  repower                Rebuild a category
   see-enabled            See enabled generators
+  see-registered         See registered categories
   
 Options:
-  --verbose          Print the [v] diagnostics (planner progress,
+  --verbose              Print the [v] diagnostics (planner progress,
                          file reads, shell commands). Errors are always
                          printed.
-  --no-generation
+  --no-generation        Prevents a generation to be created after action
 
 Synchronizing the system needs superuser privileges;
 synchronizing the house does not, but will give the user a warning.

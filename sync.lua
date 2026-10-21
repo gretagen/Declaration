@@ -285,11 +285,17 @@ if arg and arg[0] and arg[0]:match("sync%.lua$") then
     print("Synchronization finished with " .. failures .. " failure(s).")
     io.stderr:write("No new generation has been created : fix errors first.\n")
   else
-    print("Creating post-sync generation...")
-    local label = sync.repower and "post-repower" or "post-sync"
-    if not sync.shell("chronos create '" .. label .. "'") then
-      io.stderr:write("[warn] chronos create failed : system is synced but no new boot entry was added.\n")
-      io.stderr:write("        Check btrfs layout (@ / @snapshots) and run: chronos create '" .. label .. "'\n")
+    -- NACELLE_NO_GENERATION comes from the CLI's --no-generation: apply
+    -- everything, but leave the boot entries alone.
+    if os.getenv("NACELLE_NO_GENERATION") then
+      print("Skipping generation creation (--no-generation).")
+    else
+      print("Creating post-sync generation...")
+      local label = sync.repower and "post-repower" or "post-sync"
+      if not sync.shell("chronos create '" .. label .. "'") then
+        io.stderr:write("[warn] chronos create failed : system is synced but no new boot entry was added.\n")
+        io.stderr:write("        Check btrfs layout (@ / @snapshots) and run: chronos create '" .. label .. "'\n")
+      end
     end
     print("Synchronization completed.")
   end
