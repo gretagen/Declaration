@@ -1,6 +1,6 @@
 -- plugins.lua — resolve which generators haliade-synchronize enables.
 --
--- The enable list lives in /etc/haliade/enabled_modules.lua (user-edited,
+-- The enable list lives in /etc/nacelle/enabled_modules.lua (user-edited,
 -- never owned by a package, so a declaration update can never clobber it).
 -- sync.lua owns no list of its own anymore: it just asks this module
 -- "who's enabled?" and iterates whatever comes back.

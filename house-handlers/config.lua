@@ -69,7 +69,7 @@ local function merge(dst, src)
 end
 
 function config.load(path)
-  path = path or "/etc/haliade/houses/house.lua"
+  path = path or "/etc/nacelle/houses/house.lua"
   local f, err = io.open(path, "r")
   if not f then
     return nil, "cannot open " .. path .. ": " .. (err or "unknown error")
