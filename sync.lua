@@ -151,7 +151,7 @@ function sync.summary(changes)
     table.insert(groups[s], c)
   end
   print()
-  print("  Haliade Synchronization plan : ")
+  print("  System Synchronization plan : ")
   print("  " .. string.rep("=", 40))
   print()
   for s, entries in pairs(groups) do
