@@ -82,7 +82,15 @@ case "$1" in
         ;;
 
     see-enabled)
-        exec lua "$LIB/plugins.lua"
+        exec lua "$LIB/plugins.lua" "$@"
+        ;;
+
+    enable-generator|disable-generator)
+        if [ "$EUID" -ne 0 ]; then
+            echo "nacelle: '$1' writes to /etc/nacelle and needs superuser privileges."
+            exit 1
+        fi
+        exec lua "$LIB/plugins.lua" "$@"
         ;;
 
     see-registered)
@@ -115,6 +123,8 @@ Actions
   spin                   Synchronize a category
   repower                Rebuild a category
   see-enabled            See enabled generators
+  enable-generator       Add a generator to the enable list
+  disable-generator      Remove a generator from the enable list
   see-registered         See registered categories
   
 Options:
