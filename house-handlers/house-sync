@@ -1,0 +1,10 @@
+#!/bin/bash
+# house-sync — apply home/dotfile configuration from house.lua
+set -e
+
+if [ "$EUID" -ne 0 ]; then
+    echo "You are synchronizing the house without privileges, system paths will be skipped, and a generation won't be created."
+    sleep 2
+fi
+
+exec lua /usr/lib/nacelle/house-handlers/house_sync.lua "$@"
