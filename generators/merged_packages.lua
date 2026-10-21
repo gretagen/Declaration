@@ -83,7 +83,7 @@ function gen.plan(cfg, sync)
                 io.stderr:write("[apply] merged-" .. distro .. ": remerging " .. pkg .. " onto host\n")
                 local ok = s.shell("subspace-merge --pass --no-generation " .. distro .. " " .. pkg)
                 if not ok then
-                  io.stderr:write("[warn] '" .. pkg .. "' — remerge failed in " .. distro .. "\n")
+                  io.stderr:write("[warn] '" .. pkg .. "': remerge failed in " .. distro .. "\n")
                 end
                 return ok
               end))

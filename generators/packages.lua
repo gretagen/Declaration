@@ -20,11 +20,11 @@ end
 -- -Solve, then reinstall the package itself with -ReProvide.
 local function rebuild(s, q)
   if not s.shell("zeta -Solve --pass " .. q) then
-    io.stderr:write("[warn] " .. q .. " — zeta -Solve failed\n")
+    io.stderr:write("[warn] " .. q .. ": zeta -Solve failed\n")
     return false
   end
   if not s.shell("zeta -ReProvide --pass --force " .. q) then
-    io.stderr:write("[warn] " .. q .. " — zeta -ReProvide failed\n")
+    io.stderr:write("[warn] " .. q .. ": zeta -ReProvide failed\n")
     return false
   end
   return true
@@ -79,7 +79,7 @@ function gen.plan(cfg, sync)
     end
   end
 
-  -- repower: rebuild every declared package — repair its direct dependencies
+  -- repower: rebuild every declared package: repair its direct dependencies
   -- with -Solve, then reinstall the package itself with -ReProvide. This is
   -- the zeta equivalent of nixos-rebuild switch, and it is what makes a
   -- converged run produce changes instead of "already synchronized".

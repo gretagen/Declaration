@@ -123,7 +123,7 @@ function gen.plan(cfg, sync)
               io.stderr:write("[apply] " .. distro .. ": reapplying " .. pkg .. "\n")
               local ok = s.shell("subspace-run " .. distro .. " " .. cmds.install .. " " .. pkg)
               if not ok then
-                io.stderr:write("[warn] '" .. pkg .. "' — reapply failed in " .. distro .. "\n")
+                io.stderr:write("[warn] '" .. pkg .. "': reapply failed in " .. distro .. "\n")
               end
               return ok
             end))

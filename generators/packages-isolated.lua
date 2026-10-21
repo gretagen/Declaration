@@ -22,11 +22,11 @@ end
 -- store in place (--isolate semantics), then -ReProvide reinstalls it there.
 local function rebuild(s, q)
   if not s.shell("zeta -Solve --pass --isolate " .. q) then
-    io.stderr:write("[warn] " .. q .. " — zeta -Solve --isolate failed\n")
+    io.stderr:write("[warn] " .. q .. ": zeta -Solve --isolate failed\n")
     return false
   end
   if not s.shell("zeta -ReProvide --pass --force --isolate " .. q) then
-    io.stderr:write("[warn] " .. q .. " — zeta -ReProvide --isolate failed\n")
+    io.stderr:write("[warn] " .. q .. ": zeta -ReProvide --isolate failed\n")
     return false
   end
   return true

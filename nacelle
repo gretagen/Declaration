@@ -99,9 +99,9 @@ Actions
   help                   Show this help
   spin                   Synchronize a category
   repower                Rebuild a category: reapply and rebuild everything,
-                         not only what changed — zeta -Solve then -ReProvide
+                         not only what changed (zeta -Solve then -ReProvide
                          for declared packages, every house edit reapplied,
-                         every service re-enabled
+                         every service re-enabled)
   see-enabled            See enabled generators
   
 Options:
