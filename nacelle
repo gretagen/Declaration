@@ -7,7 +7,7 @@ set -e
 VERBOSE_ARGS=()
 for a in "$@"; do
     case "$a" in
-        -v|--verbose) export NACELLE_VERBOSE=1 ;;
+        --verbose) export NACELLE_VERBOSE=1 ;;
         --no-generation) export NACELLE_NO_GENERATION=1 ;;
         --repower)
             echo "nacelle: --repower is an action now, not an option."
@@ -36,9 +36,8 @@ if [ "$1" = "repower" ]; then
 fi
 
 if [ $# -eq 0 ]; then
-    echo "nacelle: I don't know what to synchronize."
-    echo "Usage: nacelle spin {house|system} [/path]"
-    echo "       nacelle repower {house|system} [/path]"
+    echo "nacelle: I don't know what you want me to do."
+    echo "Run nacelle help"
     exit 1
 fi
 
@@ -47,22 +46,26 @@ case "$1" in
         case "$2" in
             house)
                 if [ "$EUID" -ne 0 ]; then
-                echo "parsing"
+                echo "Synchronizing house as $USER"
                 else
+                    echo "Synchronizing house as $USER"
                     echo "Please verify what's in the house before synchronizing it as root."
                     echo "We will not be responsible of the damage a house will do to your system."
-                    echo "Proceed with caution."
+                    echo "Proceed with caution."                    
                 fi
-                sleep 2
+                sleep 1
                 exec lua "$LIB/house-handlers/house_sync.lua" "${@:3}"
                 ;;
 
             system)
                 if [ "$EUID" -ne 0 ]; then
+                    echo "Synchronizing system as $USER"
+                    sleep 1
                     echo "nacelle: '$ACTION system' needs superuser privileges."
                     exit 1
                 fi
-                echo "parsing"
+                echo "Synchronizing system as $USER"
+                sleep 1
                 exec lua "$LIB/sync.lua" "${@:3}"
                 ;;
 
@@ -73,7 +76,7 @@ case "$1" in
                 ;;
 
             *)
-                echo "Error: I don't know what to $ACTION with '$2'."
+                echo "nacelle: This doesn't seem to be a category."
                 echo "Run nacelle help"
                 exit 1
                 ;;
@@ -123,14 +126,13 @@ Actions
   spin                   Synchronize a category
   repower                Rebuild a category
   see-enabled            See enabled generators
+  see-registered         See registered categories
   enable-generator       Add a generator to the enable list
   disable-generator      Remove a generator from the enable list
-  see-registered         See registered categories
   
 Options:
   --verbose              Print the [v] diagnostics (planner progress,
-                         file reads, shell commands). Errors are always
-                         printed.
+                         file reads, shell commands...)
   --no-generation        Prevents a generation to be created after action
 
 Synchronizing the system needs superuser privileges;
@@ -139,7 +141,7 @@ EOF
         ;;
 
     *)
-        echo "Error: Unknown command '$1'"
+        echo "nacelle: Unknown command '$1'"
         echo "Run nacelle help"
         exit 1
         ;;
