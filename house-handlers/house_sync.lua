@@ -212,14 +212,20 @@ function house_sync.summary(changes)
     if not groups[s] then groups[s] = {} end
     table.insert(groups[s], c)
   end
-  print()
-  print("  House Synchronization plan")
-  print("  " .. string.rep("=", 40))
+  -- No banner: the [sections] below are the content, and the only context
+  -- worth stating is which mode the run is in (if any).
+  local modes = {}
   if house_sync.repower then
-    print("  mode: repower (reapplying every house change)")
+    modes[#modes + 1] = "  mode: repower (reapplying every house change)"
   end
   if house_sync.unprivileged then
-    print("  mode: unprivileged (root-only changes will be skipped)")
+    modes[#modes + 1] = "  mode: unprivileged (root-only changes will be skipped)"
+  end
+  if #modes > 0 then
+    print()
+    for _, line in ipairs(modes) do
+      print(line)
+    end
   end
   print()
   for s, entries in pairs(groups) do
