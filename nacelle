@@ -110,7 +110,7 @@ case "$1" in
 
     help)
         cat << 'EOF'
-nacelle : Haliade declarative system and home handlers.
+nacelle : Haliade declarative definition system and house management.
 
 Usage: nacelle [action] {category} [/path/to/file.lua] [option]
 
