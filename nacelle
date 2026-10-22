@@ -21,7 +21,7 @@ set -- "${VERBOSE_ARGS[@]}"
 
 # Install prefix. NACELLE_LIB points the CLI at another tree, so a working
 # copy can be tested without repacking the nacelle package.
-LIB="${NACELLE_LIB:-/home/gretagen/nacelle}"
+LIB="${NACELLE_LIB:-/usr/lib/nacelle}"
 # also visible to the lua side, which resolves generators against it
 export NACELLE_LIB="$LIB"
 
