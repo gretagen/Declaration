@@ -117,6 +117,7 @@ Usage: nacelle [action] {category} [/path/to/file.lua] [option]
 Categories:
   house                  House management
   system                 System definition
+  (house and system are exact words; enable/disable and see-enabled take one)
 
 Actions
   help                   Show this help
@@ -125,10 +126,13 @@ Actions
   load                   Recover a category from /etc/nacelle/registered
   spin                   Synchronize a category
   repower                Rebuild a category
-  see-enabled            See enabled generators
+  see-enabled            See a category's enabled generators
   see-registered         See registered categories
-  enable-generator       Add a generator to the enable list
-  disable-generator      Remove a generator from the enable list
+  enable-generator       Add a generator to a category's enable list
+  disable-generator      Remove a generator from a category's enable list
+
+  see-enabled, enable-generator and disable-generator take {system|house},
+  e.g. nacelle see-enabled house
   
 Options:
   --verbose              Print the [v] diagnostics (planner progress,

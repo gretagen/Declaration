@@ -147,16 +147,22 @@ function house_sync.change(type_, generator, target, detail, apply_fn)
 end
 
 -- load house generators
+--
+-- Which ones run is decided by /etc/nacelle/houses/enabled_house_generators.lua
+-- (variable: enabled_house_generators), read by plugins.lua — the same module
+-- the system category asks, so house_sync owns no list of its own. loadfile
+-- rather than require: package.path here has no $LIB/?.lua, and
+-- require("config") above must keep resolving to this directory's house
+-- config loader (the collision registry.lua avoids the same way). The CLI
+-- block inside plugins.lua does not fire: arg[0] is house_sync.lua, not
+-- plugins.lua.
+local plugins = assert(loadfile(LIB .. "/plugins.lua"))()
+local enabled_generators = plugins.enabled_generators("house")
+
 local generators = {}
-local generator_names = {
-  "edit",
-  "script",
-  "media",
-  "command",
-}
 
 house_sync.vprint("loading house generators...")
-for _, name in ipairs(generator_names) do
+for _, name in ipairs(enabled_generators) do
   local ok, gen = pcall(require, name)
   if ok and type(gen) == "table" then
     table.insert(generators, gen)

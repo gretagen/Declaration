@@ -5,9 +5,10 @@ if not LIB or LIB == "" then LIB = "/usr/lib/nacelle" end
 
 package.path = LIB .. "/?.lua;" .. LIB .. "/generators/?.lua;" .. package.path
 
--- Which generators run is decided by /etc/nacelle/enabled_modules.lua
--- (see plugins.lua); sync.lua does not own that list.
-local enabled_generators = require("plugins").enabled_generators()
+-- Which generators run is decided by /etc/nacelle/enabled_system_generators.lua
+-- (the system category's enable list; see plugins.lua, which owns it — the
+-- house category has its own file). sync.lua does not own a list of its own.
+local enabled_generators = require("plugins").enabled_generators("system")
 
 local config = require("config")
 
